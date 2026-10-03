@@ -97,6 +97,29 @@ for (const banned of ['test_credentials', 'reviewer_instructions', 'password', '
   check(`no "${banned}" in manifest`, !raw.toLowerCase().includes(banned))
 }
 
+// Final directory submission uses stricter limits than package validation.
+const finalLimit = (value, max, label) =>
+  check(label, value <= max, `${value} > ${max}`)
+
+finalLimit(manifest.description.length, 1024, 'description ≤1024 (final)')
+finalLimit(ui.displayName.length, 30, 'displayName ≤30 (final)')
+finalLimit(ui.shortDescription.length, 30, 'shortDescription ≤30 (final)')
+finalLimit(ui.longDescription.length, 4000, 'longDescription ≤4000 (final)')
+finalLimit(ui.developerName.length, 80, 'developerName ≤80 (final)')
+for (const [i, c] of (ui.capabilities ?? []).entries()) {
+  finalLimit(c.length, 120, `capabilities[${i}] ≤120 (final)`)
+}
+for (const [i, p] of (ui.defaultPrompt ?? []).entries()) {
+  finalLimit(p.length, 128, `defaultPrompt[${i}] ≤128 (final)`)
+}
+
+const CATEGORIES = [
+  'Productivity', 'Creativity', 'Developer Tools', 'Business & Operations',
+  'Data & Analytics', 'Communication', 'Education & Research', 'Security',
+  'Finance', 'Healthcare', 'Travel', 'Entertainment', 'Other',
+]
+check('category is supported', CATEGORIES.includes(ui.category), ui.category)
+
 console.log(`\npassed: ${ok.length}`)
 if (problems.length) {
   console.log(`FAILED: ${problems.length}\n`)

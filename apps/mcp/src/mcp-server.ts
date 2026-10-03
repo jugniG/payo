@@ -95,6 +95,16 @@ export function createServer(user: User | null, clientName?: string) {
     'search_products',
     {
       title: 'Search products',
+      // Read-only: queries the QuickCommerce catalogue and never mutates Payo or
+      // a partner platform. Open-world: reads live inventory and pricing from
+      // Blinkit/Zepto, so results change without notice and reflect only what is
+      // actually purchasable at the user's saved address. Not destructive.
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Search products on Blinkit and Zepto. Returns up to 30 results (default 15) with id, name, price, availability, platform.',
       inputSchema: {
         query: z.string().trim().describe('e.g. diet coke, peanut butter'),
@@ -187,6 +197,15 @@ export function createServer(user: User | null, clientName?: string) {
     'get_wallet_balance',
     {
       title: 'Get wallet balance',
+      // Read-only: returns the authenticated user's own prepaid balance. It does
+      // not reach outside Payo — no partner platform is contacted — so this is
+      // not open-world. Not destructive, and repeating it changes nothing.
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       description: 'Returns the current wallet balance for the authenticated user.',
       inputSchema: {},
     },
@@ -201,6 +220,14 @@ export function createServer(user: User | null, clientName?: string) {
     'list_addresses',
     {
       title: 'List saved delivery addresses',
+      // Read-only: returns addresses the user themselves saved. Confined to
+      // Payo's own database — no partner platform is contacted. Not destructive.
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       description: 'List all delivery addresses saved for this user (e.g. Home, Office). Returns id, label, recipientName, phone, and address.',
       inputSchema: {},
     },
@@ -228,6 +255,21 @@ export function createServer(user: User | null, clientName?: string) {
     'initiate_order',
     {
       title: 'Initiate order',
+      // NOT read-only: this places a real order on the user's account and, for
+      // wallet payment, initiates a card transaction.
+      // Open-world: drives Blinkit/Zepto in a live browser against third-party
+      // systems we do not control, so availability, pricing and checkout
+      // behaviour can change at any time.
+      // Destructive: cash-on-delivery completes the purchase immediately and a
+      // wallet payment creates a real financial obligation. Neither can be
+      // undone by Payo — the user must cancel with the retailer. Treat this as
+      // the high-impact tool it is and confirm with the user before calling it.
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description: 'Place an order on Blinkit or Zepto. For card payment: checks wallet balance, runs browser automation, returns OTP prompt. For cod: places order directly via browser, no wallet needed.',
       inputSchema: {
         product_id: z.string().trim().describe('id from search_products'),
@@ -428,6 +470,15 @@ export function createServer(user: User | null, clientName?: string) {
     'list_orders',
     {
       title: 'List orders',
+      // Read-only: returns the authenticated user's own order history from
+      // Payo's database. Partner platforms are not contacted to serve this, so
+      // it is not open-world. Not destructive.
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
       description: 'List recent orders for the authenticated user. Use query to filter by product name for reorder (e.g. "coke", "peanut butter"). Returns productId/productName/amount needed for initiate_order.',
       inputSchema: {
         query: z.string().trim().optional().describe('Filter by product name (e.g. "coke" to find last coke order for reorder)'),
@@ -453,6 +504,19 @@ export function createServer(user: User | null, clientName?: string) {
     'confirm_order',
     {
       title: 'Confirm order with OTP',
+      // NOT read-only: submits a bank OTP that completes a payment and debits the
+      // user's wallet.
+      // Open-world: the submitted challenge goes to the bank's servers, not to
+      // Payo, and a wrong or expired OTP is rejected externally.
+      // Destructive and non-idempotent: this moves money. A successful charge
+      // cannot be reversed by Payo, and a replayed OTP fails rather than
+      // charging twice. Only call with an OTP the user actually received.
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description: 'Submit the 6-digit OTP received on your mobile to complete the payment. Debits wallet on success.',
       inputSchema: {
         order_id: z.string().trim().describe('order_id returned by initiate_order'),
