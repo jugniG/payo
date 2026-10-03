@@ -10,6 +10,34 @@ import { searchProducts, verifyProductPrice } from './lib/quickcommerce.js'
 import { processOrderOtpPayment } from './lib/order-settlement.js'
 import { env } from './env.js'
 
+/**
+ * Maps an OAuth 2.1 access token to a Payo user.
+ *
+ * ChatGPT sends `Authorization: Bearer <jwt>` obtained from our OAuth server.
+ * The subject claim is the better-auth user id, so we look that up directly.
+ * Signature/audience/expiry are verified by `requireMcpAuth` upstream — this
+ * function only maps identity to a row.
+ */
+async function resolveUserFromOAuthToken(token: string): Promise<User | null> {
+  try {
+    const { jwtVerify, createRemoteJWKSet } = await import('jose')
+    const jwks = createRemoteJWKSet(
+      new URL(`${env.PAYO_MCP_PUBLIC_ORIGIN}/.well-known/jwks.json`),
+    )
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: env.PAYO_MCP_PUBLIC_ORIGIN,
+      audience: `${env.PAYO_MCP_PUBLIC_ORIGIN}/mcp`,
+    })
+    const sub = payload.sub as string | undefined
+    if (!sub) return null
+    return (await db.query.user.findFirst({ where: (u, { eq }) => eq(u.id, sub) })) ?? null
+  } catch {
+    // Not an OAuth token, or verification failed. Caller falls through to the
+    // API-key / cookie paths.
+    return null
+  }
+}
+
 export async function resolveUserFromAuth(authHeader?: string | null, cookieHeader?: string | null): Promise<User | null> {
   let token = authHeader?.replace(/^Bearer\s+/i, '').trim()
 
@@ -24,6 +52,10 @@ export async function resolveUserFromAuth(authHeader?: string | null, cookieHead
   }
 
   if (!token) return null
+
+  // 0. OAuth access token (ChatGPT / any MCP client using the OAuth flow)
+  const oauthUser = await resolveUserFromOAuthToken(token)
+  if (oauthUser) return oauthUser
 
   // 1. Try API key hash
   const hash = createHash('sha256').update(token).digest('hex')
