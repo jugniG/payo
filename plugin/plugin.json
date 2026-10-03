@@ -1,0 +1,105 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "payo",
+  "version": "1.0.0",
+  "description": "Order groceries and household goods from Blinkit and Zepto without opening a shopping app. Search the catalogue, build the cart, and check out on the user's behalf.",
+  "author": {
+    "name": "Payo",
+    "url": "https://payo.live"
+  },
+  "homepage": "https://payo.live",
+  "repository": "https://github.com/Sahil-Gupta584/payo",
+  "license": "MIT",
+  "keywords": ["groceries", "shopping", "quick-commerce", "blinkit", "zepto", "india"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Payo",
+        "shortDescription": "Order groceries via your agent",
+        "longDescription": "Payo lets an AI agent shop for you on Blinkit and Zepto, India's quick-commerce grocery services. Ask in plain language — \"order me a pack of Amul Gold Milk\" — and Payo searches the live catalogue for your delivery area, shows you the options with prices in rupees, and places the order on your behalf.\n\nYou stay in control throughout. Delivery addresses live in the Payo dashboard, never in chat. Payment is either cash on delivery or drawn from your prepaid Payo wallet, and wallet payments require a bank OTP you approve yourself. Payo only operates on Blinkit and Zepto and only serves addresses in India.",
+        "developerName": "Payo",
+        "category": "Productivity",
+        "capabilities": [
+          "Search groceries by name",
+          "Compare prices across Blinkit and Zepto",
+          "Place cash-on-delivery orders",
+          "Place wallet-paid orders with OTP approval",
+          "Show order history"
+        ],
+        "websiteURL": "https://payo.live",
+        "supportURL": "https://payo.live/support",
+        "privacyPolicyURL": "https://payo.live/privacy",
+        "termsOfServiceURL": "https://payo.live/terms",
+        "defaultPrompt": [
+          "Find a pack of Amul Gold Milk",
+          "What did I order last week?",
+          "How much is in my Payo wallet?"
+        ],
+        "brandColor": "#1A6FEF",
+        "brandColorDark": "#8CB4FF",
+        "composerIcon": "./assets/composer-icon.png",
+        "composerIconDark": "./assets/composer-icon-dark.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png"
+      },
+      "onboardingSkill": "./skills/get-started/SKILL.md",
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "List saved delivery addresses",
+              "prompt": "What delivery addresses do I have saved with Payo?",
+              "tools_triggered": "list_addresses",
+              "expected_behavior": "Returns the saved addresses with label, recipient name, phone, and full address. If none exist, says so and points to the dashboard rather than returning an empty list."
+            },
+            {
+              "description": "Search products on Blinkit",
+              "prompt": "Find a pack of Amul Gold Milk on Blinkit.",
+              "tools_triggered": "search_products",
+              "expected_behavior": "Calls search_products with the user's address_id and platform=blinkit. Returns matching items with price in rupees, availability, and delivery estimate. Offers to order a specific item."
+            },
+            {
+              "description": "Search products on Zepto",
+              "prompt": "Find dark fantasy biscuits on Zepto.",
+              "tools_triggered": "search_products",
+              "expected_behavior": "Calls search_products with platform=zepto. Returns available variants with prices in rupees. Does not claim the store is closed based on a stale delivery estimate."
+            },
+            {
+              "description": "Check wallet balance",
+              "prompt": "How much money is left in my Payo wallet?",
+              "tools_triggered": "get_wallet_balance",
+              "expected_behavior": "Calls get_wallet_balance and reports the balance in US dollars to two decimal places."
+            },
+            {
+              "description": "Look up past orders",
+              "prompt": "What did I order from Payo last week?",
+              "tools_triggered": "list_orders",
+              "expected_behavior": "Calls list_orders and summarises recent orders with product name, platform, amount, and date."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Platform outside scope",
+              "prompt": "Search for a laptop on Amazon using Payo."
+            },
+            {
+              "description": "Cash on delivery on an unsupported platform",
+              "prompt": "Order a pack of Amul Gold Milk from Zepto with cash on delivery."
+            },
+            {
+              "description": "Unsupported non-grocery purchase",
+              "prompt": "Book me a flight to Mumbai using Payo."
+            }
+          ]
+        },
+        "demo_recording_url": "https://payo.live/demo-recording",
+        "commerce": true,
+        "commerce_description": "Payo takes payment for grocery orders placed through the user's connected account. Wallet purchases are prepaid by the user through the Payo dashboard and debited when an order completes; cash-on-delivery orders are settled in cash with the delivery partner at the door. Payo does not sell digital goods, subscriptions, or in-app purchases of its own."
+      },
+      "publication": {
+        "countries": ["IN"],
+        "release_notes": "Initial release. Search across Blinkit and Zepto, cash-on-delivery and wallet checkout with OTP approval, saved delivery addresses, and order history."
+      }
+    }
+  }
+}

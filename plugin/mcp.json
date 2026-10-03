@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "payo": {
+      "type": "streamable-http",
+      "url": "https://nodejs-3140-4000.prg1.zerops.app/mcp"
+    }
+  }
+}
