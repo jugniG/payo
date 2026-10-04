@@ -31,7 +31,7 @@ const envSchema = z.object({
     .default('false'),
 })
 
-export const env = envSchema.parse({
+const raw = {
   PORT: process.env.PORT,
   DATABASE_URL: process.env.DATABASE_URL,
   SOLARI_API_KEY: process.env.SOLARI_API_KEY,
@@ -51,7 +51,33 @@ export const env = envSchema.parse({
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   MCP_REQUIRE_OAUTH: process.env.MCP_REQUIRE_OAUTH,
-})
+}
+
+const parsed = envSchema.safeParse(raw)
+
+if (!parsed.success) {
+  // Enumerating the missing names is the whole point: a bare ZodError dump on
+  // a host like Zerops buries them, and the only visible symptom is a 502 from
+  // the proxy because nothing ever bound PORT.
+  const missing = new Set<string>()
+  for (const issue of parsed.error.issues) {
+    const key = issue.path[0]
+    if (typeof key === 'string') missing.add(key)
+  }
+
+  console.error(
+    '\n  FATAL: apps/mcp cannot start — environment is incomplete.\n' +
+      `  Missing or invalid: ${[...missing].join(', ') || '(unknown)'}\n\n` +
+      '  Locally these come from apps/mcp/.env (see .env.example).\n' +
+      '  In production set them as environment variables on the host.\n' +
+      '  Copy this block into the host config:\n' +
+      [...missing].map((k) => `    ${k}=`).join('\n') +
+      '\n',
+  )
+  process.exit(1)
+}
+
+export const env = parsed.data
 
 /** Canonical protected-resource identifier. Access tokens are audience-bound to this. */
 export const MCP_RESOURCE = `${env.PAYO_MCP_PUBLIC_ORIGIN}/mcp`
