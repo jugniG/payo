@@ -10,13 +10,13 @@
     "ts": "node --max-old-space-size=6144 ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
-    "@better-auth/cimd": "1.7.7",
-    "@better-auth/core": "1.7.7",
-    "@better-auth/mcp": "1.7.7",
+    "@better-auth/cimd": "1.7.12",
+    "@better-auth/core": "1.7.12",
+    "@better-auth/mcp": "1.7.12",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@repo/db": "*",
     "@solarisdk/browser": "0.1.4",
-    "better-auth": "1.7.7",
+    "better-auth": "1.7.12",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.1",
