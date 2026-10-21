@@ -1,4 +1,4 @@
-# Payo — Powering AI to shop online
+# Payo - Powering AI to shop online
 
 Payo is an **MCP server** that lets AI agents (Claude, OpenCode, ChatGPT, etc.) shop online on behalf of users. The agent searches products, places orders via browser automation, and pays from the user's wallet (OTP) or cash on delivery.
 
